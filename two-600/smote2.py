@@ -1,4 +1,4 @@
-#分类器对比
+
 
 import numpy as np
 import pandas as pd
@@ -30,43 +30,42 @@ pl.rcParams['axes.unicode_minus'] = False
 import warnings
 warnings.filterwarnings("ignore")
 
-# 调用TSNE降维到三维，然后三维可视化的函数
+
 def plot3D(datayz_true,datayz_true_result):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     # TSNE降维
-    tsne = TSNE(n_components=3) # TSNE降维
-    normal = pd.DataFrame(tsne.fit_transform(datayz_true))  # 进行数据降维,并返回结果
+    tsne = TSNE(n_components=3) 
+    normal = pd.DataFrame(tsne.fit_transform(datayz_true))  
 
-    # PCA降维
+
     # PCAE = PCA(n_components=3)
     # normal = pd.DataFrame(PCAE.fit_transform(datayz_true))
     datayz_true_result = pd.DataFrame(datayz_true_result)
 
 
-    ax = plt.subplot(111, projection='3d')  # 创建一个三维的绘图工程
-    #  将数据点分成三部分画，在颜色上有区分度
+    ax = plt.subplot(111, projection='3d')  
+
     colors = [ 'red', 'yellow','blue','black',  'burlywood']
     for i in range(len(colors)):
         temp = normal[datayz_true_result[0] == i]
         x, y, z = temp[0], temp[1], temp[2]
-        ax.scatter(x, y, z, c=colors[i])  # 绘制数据点
+        ax.scatter(x, y, z, c=colors[i])  
     # ax.scatter(x[10:20], y[10:20], z[10:20], c='y')
     # ax.scatter(x[30:40], y[30:40], z[30:40], c='g')
     # x, y, z = abnormal[0], abnormal[1], abnormal[2]
-    # #  将数据点分成三部分画，在颜色上有区分度
-    # ax.scatter(x, y, z, c='r')  # 绘制数据点
+    # ax.scatter(x, y, z, c='r')  
 
-    ax.set_zlabel('Z')  # 坐标轴
+    ax.set_zlabel('Z')  
     ax.set_ylabel('Y')
     ax.set_xlabel('X')
     plt.show()
 
-# 读训练测试数据
+
 train_set = pd.read_excel("train.xlsx",index_col=0)
 test_set = pd.read_excel("test.xlsx",index_col=0)
 
-# 处理数据到可以进模型
+
 y_train = list(train_set.iloc[:,0])
 y_test = list(test_set.iloc[:,0])
 
@@ -76,7 +75,7 @@ X_test = np.array(test_set.iloc[:,1:])
 data = np.concatenate((X_train,X_test),axis=0)
 label =y_train.copy()
 label.extend(y_test)
-# 对数据进行归一化标准化
+
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 
@@ -87,7 +86,7 @@ mm_data = mm.fit_transform(data)
 X_train = mm.transform(X_train)
 X_test = mm.transform(X_test)
 
-# SMOTE数据平衡----下面三种数据均衡方法选其一
+# SMOTE data balancing ---- Choose one of the following three data balancing methods
 # from imblearn.combine import SMOTEENN
 # sm = SMOTEENN()
 
@@ -98,7 +97,7 @@ from imblearn.over_sampling import SMOTE
 sm = SMOTE(k_neighbors=2,m_neighbors=5)
 X_train, y_train = sm.fit_sample(X_train, y_train)
 
-#打乱数据集的顺序
+#Disrupting the order of the data set
 # index = [i for i in range(len(data))]
 # random.shuffle(index)
 # data = data[index]
@@ -106,13 +105,13 @@ X_train, y_train = sm.fit_sample(X_train, y_train)
 
 # dataAll = pd.concat([pd.DataFrame(data),pd.DataFrame(label)],axis=1)
 
-#集成模型
+#Integrated model
 estimator = RandomForestClassifier( random_state=10)
 
 estimator.fit(X_train,y_train)
 pre = estimator.predict(X_test)
 
-#计算准确率
+#Accuracy
 from sklearn.metrics import accuracy_score,f1_score,roc_auc_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
@@ -122,8 +121,8 @@ print("recall",recall_score(pre,y_test, average='macro'))
 print( "f1_score", f1_score(pre,y_test,average='macro'))
 # print( "auc", roc_auc_score(pre,y_test))
 
-#画拟合图
-estimator2 = TSNE(n_components=2)  # TSNE降维
+#Draw the fitting diagram
+estimator2 = TSNE(n_components=2) 
 # estimator2 = PCA(n_components=2)
 X_pca2 = estimator2.fit_transform(X_test)
 X_pca = estimator2.fit_transform(X_train)
@@ -131,17 +130,17 @@ estimator.fit(X_pca,y_train)
 y = np.array(pd.concat([pd.DataFrame(y_train), pd.DataFrame(y_test)], axis=0))
 X_pca_All = np.array(pd.concat([pd.DataFrame(X_pca), pd.DataFrame(X_pca2)], axis=0))
 y_predicted = estimator.predict(X_pca2)
-# 画图,画出网格数据分布图
+
 mpl.rcParams['font.sans-serif'] = [u'SimHei']
 mpl.rcParams['axes.unicode_minus'] = False
-# 绘制
-N, M = 500, 500  # 横纵各采样多少个值
+
+N, M = 500, 500 
 x1_min, x2_min = X_pca_All.min(axis=0)
 x1_max, x2_max = X_pca_All.max(axis=0)
 t1 = np.linspace(x1_min, x1_max, N)
 t2 = np.linspace(x2_min, x2_max, M)
-x1, x2 = np.meshgrid(t1, t2)  # 生成网格采样点
-x_show = np.stack((x1.flat, x2.flat), axis=1)  # 测试点
+x1, x2 = np.meshgrid(t1, t2)  
+x_show = np.stack((x1.flat, x2.flat), axis=1) 
 y_predict = estimator.predict(x_show)
 """
 '#FFFF00', '#76EE00'
